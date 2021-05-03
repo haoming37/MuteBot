@@ -3,10 +3,11 @@ import re
 from multiprocessing import Process
 import discord
 from flask import Flask, render_template, request, redirect, url_for
+import os
 
 class DiscordBot:
     __instance = None
-    TOKEN = "Nzg1MTEyMjcwNDAwNTIwMjEz.X8zGxw.yDAbDW66cvQB_BsIrksWyuPbVQU"
+    TOKEN = ""
     client = discord.Client()
 
     def getInstance():
@@ -65,12 +66,13 @@ class DiscordBot:
         print("startMeeting")
         pass
 
-    def __init__(self):
-        if WebServer.__instance != None:
+    def __init__(self,TOKEN):
+        if DiscordBot.__instance != None:
             raise Exception("This class is a singleton!")
         else:
+            self.TOKEN = TOKEN
             self.client.run(self.TOKEN)
-            WebServer.__instance = self
+            DiscordBot.__instance = self
         
 
 
@@ -122,14 +124,19 @@ class WebServer:
             if data['eventid'] == EventId.StartDiscussion:
                 discordBot.startDiscussion()
             elif data['eventid'] == EventId.StartLobby:
-                discordBot..StartLobby()
+                discordBot.StartLobby()
             elif data['eventid'] == EventId.StartTask:
-                discordBot..StartTask()
+                discordBot.StartTask()
 
 # main関数
 def main():
+    if os.path.isfile("TOKEN"):
+        with open("TOKEN") as f:
+            token = f.read()
+    else:
+        token = os.getenv("DISCORD_TOKEN", default="")
     WebServer()
-    DiscordBot()
+    DiscordBot(token)
 
 if __name__ == "__main__":
     main()
