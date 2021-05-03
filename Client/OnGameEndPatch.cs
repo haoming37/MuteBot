@@ -7,7 +7,6 @@ using UnityEngine;
 
 
 namespace MuteBotClient{
-    //[HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.DDIEDPFFHOG))]
     [HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.OnGameEnd))]
     public class OnGameEndPatch {
         public static void Prefix(AmongUsClient __instance, ref GameOverReason NEPMFBMGGLF, bool FBEKDLNKNLL) {

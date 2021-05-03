@@ -31,8 +31,8 @@ namespace MuteBotClient {
         // InnerNet.InnerNetClient.GameStates.Joined
         public static void Prefix(LobbyBehaviour JGECHBIEHKM){
             if (AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.Started) return;
-            Task.Run(() => MuteBot.UpdateStatus(GameStatus.Lobby));
             MuteBot.LogInfo("PlayerPhysicsCoSpawnPlayerPatch");
+            Task.Run(() => MuteBot.UpdateStatus(GameStatus.Lobby));
         }
     }
 }
