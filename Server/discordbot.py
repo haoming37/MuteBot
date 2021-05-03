@@ -16,178 +16,153 @@ class EventId(Enum):
     Discussion = 2
     UnKnown = 3
 
+os.environ['FLASK_ENV'] = 'development'
+os.environ['WERKZEUG_RUN_MAIN'] = 'true'
+
 # ここからDiscordBot用定義
 Intents = discord.Intents.default()
 Intents.members = True
 baseDir =os.path.dirname(os.path.abspath(__file__))
 TOKENPATH = baseDir + "/TOKEN"
-print(TOKENPATH)
 if os.path.isfile(TOKENPATH):
     with open(TOKENPATH) as f:
         TOKEN = f.read()
 else:
     TOKEN = os.getenv("DISCORD_TOKEN", default="")
 
-client = discord.Client(intents=Intents)
-vc = None
-msg = None
 
-@client.event
-async def on_ready():
-    # 起動したらターミナルにログイン通知が表示される
-    print('ログインしました')
-
-@client.event
-async def on_message(message):
-    global client
-    global vc
-    global msg
-    content = message.content
-    if re.match('^/msm [a-z]*$', content):
-        command = content.split(" ")[1]
-        print(command)
-        print(content)
-        if command == "new" or command == "n":
-            await new(message)
-        elif command == "end" or command == "e":
-            await end()
-        elif command == "unmute" or command == "u":
-            await unmute(message)
-        else:
-            await help()
-
-async def new(message):
-    global client
-    global vc
-    global msg
-    # サーバー起動のメッセージを作成
-    print(message.channel)
-    msg = await message.channel.send("MuteBot開始\nクライアント待ち")
-    # メッセージ送り主のいるボイスチャンネルを探す
-    vcs = message.guild.voice_channels
-    author = message.author
-    targetvc = None
-    for v in vcs:
-        if targetvc != None:
-            break
-        for member in v.members:
-            if targetvc !=None:
-                break
-            if member == author:
-                targetvc = v
-                break
-    vc = targetvc
-
-async def end():
-    global client
-    global vc
-    global msg
-    # サーバー起動のメッセージを削除する
-    await msg.delete()
+@singleton
+class DiscordBot:
+    client = discord.Client(intents=Intents)
     vc = None
-    dcUsers = []
-    auUsers = {}
+    msg = None
 
-async def unmute(message):
-    global msg
-    vcs = message.guild.voice_channels
-    author = message.author
-    targetvc = None
-    for vc in vcs:
-        if targetvc != None:
-            break
-        for member in vc.members:
-            if targetvc !=None:
-                break
-            if member == author:
-                targetvc = vc
-                break
-    vc = targetvc
-    for member in vc.members:
-        await member.edit(mute=False)
-        await member.edit(deafen=False)
-    await msg.edit(content="unmute all完了")
+    @client.event
+    async def on_ready():
+        # 起動したらターミナルにログイン通知が表示される
+        print('ログインしました')
 
-async def unmuteAll():
-    global client
-    global vc
-    global msg
-    # チャンネル内の全員のマイクミュートステータスを解除する
-    if vc:
+    @client.event
+    async def on_message(message):
+        content = message.content
+        discordbot = DiscordBot()
+        if re.match('^/msm [a-z]*$', content):
+            command = content.split(" ")[1]
+            print(command)
+            print(content)
+            if command == "new" or command == "n":
+                await discordbot.new(message)
+            elif command == "end" or command == "e":
+                await discordbot.end()
+            elif command == "unmute" or command == "u":
+                await discordbot.unmute(message)
+            else:
+                await discordbot.help()
+
+    async def new(self, message):
+        # サーバー起動のメッセージを作成
+        print(message.channel)
+        self.msg = await message.channel.send("MuteBot開始\nクライアント待ち")
+        # メッセージ送り主のいるボイスチャンネルを探す
+        vcs = message.guild.voice_channels
+        author = message.author
+        targetvc = None
+        for v in vcs:
+            if targetvc != None:
+                break
+            for member in v.members:
+                if targetvc !=None:
+                    break
+                if member == author:
+                    targetvc = v
+                    break
+        self.vc = targetvc
+
+    async def end(self, message):
+        global client
+        # サーバー起動のメッセージを削除する
+        await self.msg.delete()
+        self.vc = None
+        self.msg = None
+
+    async def unmute(self, message):
+        vcs = message.guild.voice_channels
+        author = message.author
+        targetvc = None
+        for vc in vcs:
+            if targetvc != None:
+                break
+            for member in vc.members:
+                if targetvc !=None:
+                    break
+                if member == author:
+                    targetvc = vc
+                    break
+        vc = targetvc
         for member in vc.members:
             await member.edit(mute=False)
-
-async def undeafenAll():
-    global client
-    global vc
-    global msg
-    # チャンネル内の全員のスピーカーミュートステータスを解除する
-    if vc:
-        for member in vc.members:
             await member.edit(deafen=False)
 
-async def muteAll():
-    global client
-    global vc
-    global msg
-    print('muteAll')
-    print(vc)
-    if vc:
-        for member in vc.members:
-            await member.edit(mute=True)
-            await member.edit(deafen=True)
+    async def unmuteAll(self):
+        # チャンネル内の全員のマイクミュートステータスを解除する
+        if self.vc:
+            for member in self.vc.members:
+                await member.edit(mute=False)
 
-async def help():
-    global client
-    global vc
-    global msg
-    pass
+    async def undeafenAll(self):
+        # チャンネル内の全員のスピーカーミュートステータスを解除する
+        if self.vc:
+            for member in self.vc.members:
+                await member.edit(deafen=False)
 
-# ゲーム開始時、ミーティング終了時に実行
-async def startTask():
-    global client
-    global vc
-    global msg
-    print("startTasks")
-    pass
+    async def muteAll(self):
+        print('muteAll')
+        print(vc)
+        if self.vc:
+            for member in self.vc.members:
+                await member.edit(mute=True)
+                await member.edit(deafen=True)
 
-# ミーティング開始時に実行
-async def startDiscussion():
-    global client
-    global vc
-    global msg
-    print("startDiscussion")
-    pass
+    async def help(self):
+        pass
 
-# ロビーにプレイヤーが参加する都度実行
-async def startLobby(players):
-    global client
-    global vc
-    global msg
-    print("startLobby")
-    undeafenAll()
-    unmuteAll()
-    # Msg部分を作成
-    text = ""
-    text += "ゲームステータス=ロビー\n"
-    for player in players:
-        text += player['name'] + "="
-        for member in vc.members:
-            if player['name'] == member.display_name:
-                text += "@" + member.display_name
-        text += " " + int(player['colorId'])
-        text += " " + int(player['isDead'])
-        text += "\n"
-    pass
+    # ゲーム開始時、ミーティング終了時に実行
+    async def startTask(self):
+        print("startTasks")
+        pass
+
+    # ミーティング開始時に実行
+    async def startDiscussion(self):
+        print("startDiscussion")
+        pass
+
+    # ロビーにプレイヤーが参加する都度実行
+    async def startLobby(players):
+        print("startLobby")
+        undeafenAll()
+        unmuteAll()
+        # Msg部分を作成
+        text = ""
+        text += "ゲームステータス=ロビー\n"
+        for player in players:
+            text += player['name'] + "="
+            for member in vc.members:
+                if player['name'] == member.display_name:
+                    text += "@" + member.display_name
+            text += " " + int(player['colorId'])
+            text += " " + int(player['isDead'])
+            text += "\n"
+        pass
+
+    def __init__(self):
+        self.client.run(TOKEN)
 
 # ここからFlask用定義
 app = Flask(__name__)
 app.debug = True
 @app.route('/mutebot', methods=['GET', 'POST'])
 def receiveMsg():
-    global client
-    global vc
-    global msg
+    client = DiscordBot().client
     print("mutebot")
     if request.method == 'POST':
         data = request.json
@@ -214,7 +189,7 @@ def startWebServer():
     pass
 
 def startDiscordBot():
-    client.run(TOKEN)
+    DiscordBot()
 
 def main():
     thread1 = Thread(target=startDiscordBot)
