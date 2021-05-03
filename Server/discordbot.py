@@ -41,61 +41,16 @@ class DiscordBot:
             elif command == "end" or command == "e":
                 await discordbot.end()
             elif command == "unmute" or command == "u":
-                await discordbot.unmute()
-            elif command == "test":
-                await discordbot.test(message)
-            elif command == "testa":
-                await discordbot.test2(message)
+                await discordbot.unmuteAll()
+                await discordbot.undeafenAll()
             else:
                 await discordbot.help()
 
             # コマンドを実行後に元のメッセージを削除する
-            await message.delete()
-            print("delete OK")
+            # await message.delete()
+            # print("delete OK")
 
     async def new(self,message):
-        # サーバー起動のメッセージを作成する
-        # メッセージ送り主のいるボイスチャンネルを探す
-        author = message.author
-        vcs = message.guild.voice_channels
-        targetvc = None
-        for vc in vcs:
-            if targetvc != None:
-                break
-            for member in vc.members:
-                if targetvc !=None:
-                    break
-                if member == author:
-                    targetvc = vc
-                    break
-        print(tagetvc)
-        self.vc = targetvc
-        # プラグインからゲームステータスを受け取るサーバーを起動する
-        webserver = WebServer.getInstance()
-        if webserver.isRunning:
-            webserver.stopFalsk()
-        webserver.startFlask()
-
-    async def end(self):
-        # サーバー起動のメッセージを削除する
-        # プラグインからゲームステータスを受け取るサーバーを終了する
-        webserver = WebServer.getInstance()
-        if webserver.isRunning:
-            webserver.stopFlask()
-
-    async def unmute(self):
-        # チャンネル内の全員のミュートステータスを解除する
-        pass
-
-    async def help(self):
-        pass
-
-    async def test2(self,message):
-        if self.msg:
-            print(self.msg)
-            await self.msg.delete()
-
-    async def test(self,message):
         # サーバー起動のメッセージを作成
         print(message.channel)
         self.msg = await message.channel.send("MuteBot開始\nクライアント待ち")
@@ -112,20 +67,65 @@ class DiscordBot:
                 if member == author:
                     targetvc = vc
                     break
+        self.vc = targetvc
+        # プラグインからゲームステータスを受け取るサーバーを起動する
+        webserver = WebServer.getInstance()
+        if webserver.isRunning:
+            webserver.stopFalsk()
+        webserver.startFlask()
+
+    async def end(self):
+        # サーバー起動のメッセージを削除する
+        await self.msg.delete()
+        self.vc = None
+        self.dcUsers = []
+        self.auUsers = {}
+        # プラグインからゲームステータスを受け取るサーバーを終了する
+        webserver = WebServer.getInstance()
+        if webserver.isRunning:
+            webserver.stopFlask()
+
+    async def unmuteAll(self):
+        # チャンネル内の全員のマイクミュートステータスを解除する
+        if self.vc:
+            for member in self.vc.members:
+                await member.edit(mute=False)
+
+    async def undeafenAll(self):
+        # チャンネル内の全員のスピーカーミュートステータスを解除する
+        if self.vc:
+            for member in self.vc.members:
+                await member.edit(deafen=False)
+
+    async def help(self):
+        pass
 
     # ゲーム開始時、ミーティング終了時に実行
-    def startTasks():
+    async def startTasks(self):
         print("startTasks")
         pass
     
     # ミーティング開始時に実行
-    def startDiscussion():
+    async def startDiscussion(self):
         print("startDiscussion")
         pass
 
     # ロビーにプレイヤーが参加する都度実行
-    def startLobby():
-        print("startMeeting")
+    async def startLobby(self, players):
+        print("startLobby")
+        self.undeafenAll()
+        self.unmuteAll()
+        # Msg部分を作成
+        text = ""
+        text += "ゲームステータス=ロビー\n"
+        for player in players:
+            text += player['name'] + "="
+            for member in self.vc.members:
+                if player['name'] = member.display_name:
+                    text += "@" + member.display_name
+            text += " " + int(player['colorId'])
+            text += " " + int(player['isDead'])
+            text += "\n"
         pass
 
     def __init__(self,TOKEN):
