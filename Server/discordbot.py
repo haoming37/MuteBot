@@ -2,8 +2,9 @@ from enum import Enum
 import re
 from multiprocessing import Process
 import discord
+from discord.ext import commands
 from flask import Flask, render_template, request, redirect, url_for, Response
-import os
+import os, sys
 from threading import Thread
 from singleton_decorator import singleton
 import time
@@ -23,7 +24,11 @@ os.environ['WERKZEUG_RUN_MAIN'] = 'true'
 # ここからDiscordBot用定義
 Intents = discord.Intents.default()
 Intents.members = True
-baseDir =os.path.dirname(os.path.abspath(__file__))
+
+if getattr(sys, 'frozen', False):
+    baseDir = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    baseDir = os.path.dirname(os.path.abspath(__file__))
 TOKENPATH = baseDir + "/TOKEN"
 if os.path.isfile(TOKENPATH):
     with open(TOKENPATH) as f:
@@ -37,7 +42,7 @@ class DiscordBot:
     client = discord.Client(intents=Intents)
     vc = None
     msg = None
-    nameConverter = {"Nearpie": "haoming"}
+    nameConverter = {}
     isRunning = False
 
     @client.event
@@ -52,21 +57,22 @@ class DiscordBot:
         discordbot = DiscordBot()
         if re.match('^/msm [a-z]*$', content):
             command = content.split(" ")[1]
-            print(command)
             print(content)
             if command == "new" or command == "n":
                 await discordbot.new(message)
             elif command == "end" or command == "e":
-                await discordbot.end()
+                await discordbot.end(message)
             elif command == "unmute" or command == "u":
                 await discordbot.unmute(message)
+            elif command == "list" or command == "l":
+                await discordbot.linkList(message)
             else:
-                await discordbot.help()
+                await discordbot.help(message)
+        elif re.match('^/msm link .* .*$', content):
+            print(content)
+            await discordbot.link(message)
 
     async def new(self, message):
-        # サーバー起動のメッセージを作成
-        print(message.channel)
-        self.msg = await message.channel.send("MuteBot開始\nクライアント待ち")
         # メッセージ送り主のいるボイスチャンネルを探す
         vcs = message.guild.voice_channels
         author = message.author
@@ -80,17 +86,29 @@ class DiscordBot:
                 if member == author:
                     targetvc = v
                     break
+        if targetvc == None:
+            message.channel.send("ボイスチャンネルに参加してからコマンドを実行してください")
+            return
+        if os.path.isfile(baseDir + "/nameConverter.json"):
+            with open(baseDir +"/nameConverter.json", "r") as f:
+                self.nameConverter = json.load(f)
+        self.msg = await message.channel.send("MuteBot開始\nクライアント待ち")
         self.vc = targetvc
         self.isRunning = True
 
     async def end(self, message):
         # ミュートを解除する
-        await self.unmute()
+        await self.unmute(message)
         # サーバー起動のメッセージを削除する
-        await self.msg.delete()
-        self.vc = None
-        self.msg = None
-        self.isRunning = False
+        if self.isRunning:
+            await self.msg.delete()
+            self.vc = None
+            self.msg = None
+            self.isRunning = False
+            with open(baseDir +"/nameConverter.json", "w") as f:
+                json.dump(self.nameConverter,f)
+        else:
+            message.channel.send("MuteBotが起動していません")
 
     async def unmute(self, message):
         vcs = message.guild.voice_channels
@@ -109,6 +127,19 @@ class DiscordBot:
         for member in vc.members:
             await member.edit(mute=False)
             await member.edit(deafen=False)
+
+    async def link(self, message):
+        args = message.content.strip().split(" ")
+        self.nameConverter[args[2]] = args[3]
+        text = args[2] + "(Among Us)を" + args[3] + "(Discord)にリンクしました"
+        await message.channel.send(text)
+    
+    async def linkList(self, message):
+        text = "[リンクリスト]\n"
+        for item in self.nameConverter:
+            text = item + "(Among Us)と" + self.nameConverter[item] + "(Discord)がリンクされています\n" 
+        await message.channel.send(text)
+
 
     async def unmuteAll(self):
         # チャンネル内の全員のマイクミュートステータスを解除する
@@ -129,8 +160,18 @@ class DiscordBot:
                 await member.edit(mute=True)
                 await member.edit(deafen=True)
 
-    async def help(self):
-        pass
+    async def help(self, message):
+        text = """
+        ```
+        使い方
+        /msm new
+        /msm end
+        /msm unmute
+        /msm link <AmongUsプレイヤー名> <Discord表示名>
+        ※ロビーで色を変える、入り直す等をすると反映されます
+        ```
+        """
+        await message.channel.send(text)
 
     # ゲーム開始時、ミーティング終了時に実行
     async def startTask(self, players):
@@ -141,7 +182,8 @@ class DiscordBot:
             flag = True
             target = None
             if player['name'] in self.nameConverter:
-                convertedName = self.nameConverter[player['name']]
+                userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
+                convertedName = self.msg.guild.get_member(int(userid)).display_name
                 for member in self.vc.members:
                     if convertedName == member.display_name or player['name']== member.display_name:
                         target = member
@@ -164,7 +206,8 @@ class DiscordBot:
             flag = True
             target = None
             if player['name'] in self.nameConverter:
-                convertedName = self.nameConverter[player['name']]
+                userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
+                convertedName = self.msg.guild.get_member(int(userid)).display_name
                 for member in self.vc.members:
                     if convertedName == member.display_name or player['name']== member.display_name:
                         target = member
@@ -192,13 +235,14 @@ class DiscordBot:
     async def updateMessage(self, players):
         if self.msg == None:
             return
-        text = ""
-        text += "MuteBot動作中\n"
+        text = "```"
+        text += "MuteBot動作中```"
         for player in players:
             text += player['name'] + "="
 
             if player['name'] in self.nameConverter:
-                convertedName = self.nameConverter[player['name']]
+                userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
+                convertedName = self.msg.guild.get_member(int(userid)).display_name
             else:
                 convertedName = ""
             for member in self.vc.members:
@@ -240,17 +284,10 @@ def receiveMsg():
                 pass
         return Response("{'a':'b'}", status=201, mimetype='application/json')
     if request.method == 'GET':
-        if discordbot.isRunning:
-            print('muteall')
-            discordbot = DiscordBot()
-            muteall = asyncio.run_coroutine_threadsafe(discordbot.muteAll(), client.loop)
-            muteall.result()
+        # サーバーが起動していることを確認する用
         return 'Hello, World!'
 
 # main関数
-def startWebServer():
-    pass
-
 def startDiscordBot():
     DiscordBot().client.run(TOKEN)
 
