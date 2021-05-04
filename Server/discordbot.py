@@ -181,13 +181,16 @@ class DiscordBot:
         for player in players:
             flag = True
             target = None
+            convertedName = ""
             if player['name'] in self.nameConverter:
                 userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
-                convertedName = self.msg.guild.get_member(int(userid)).display_name
-                for member in self.vc.members:
-                    if convertedName == member.display_name or player['name']== member.display_name:
-                        target = member
-                        flag = False
+                if userid.isdecimal:
+                    convertedName = self.msg.guild.get_member(int(userid)).display_name
+
+            for member in self.vc.members:
+                if convertedName == member.display_name or player['name']== member.display_name:
+                    target = member
+                    flag = False
             if target:
                 if player['isDead']:
                     await target.edit(mute=False)
@@ -205,13 +208,15 @@ class DiscordBot:
         for player in players:
             flag = True
             target = None
+            convertedName = ""
             if player['name'] in self.nameConverter:
                 userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
-                convertedName = self.msg.guild.get_member(int(userid)).display_name
-                for member in self.vc.members:
-                    if convertedName == member.display_name or player['name']== member.display_name:
-                        target = member
-                        flag = False
+                if userid.isdecimal:
+                    convertedName = self.msg.guild.get_member(int(userid)).display_name
+            for member in self.vc.members:
+                if convertedName == member.display_name or player['name']== member.display_name:
+                    target = member
+                    flag = False
             if target:
                 if player['isDead']:
                     await target.edit(mute=True)
@@ -238,21 +243,22 @@ class DiscordBot:
         text = "```"
         text += "MuteBot動作中```"
         for player in players:
-            text += player['name'] + "="
+            text += player['name'] + " <=> "
 
             if player['name'] in self.nameConverter:
                 userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
                 convertedName = self.msg.guild.get_member(int(userid)).display_name
             else:
                 convertedName = ""
+            flag = True
             for member in self.vc.members:
                 if convertedName == member.display_name or player['name'] == member.display_name:
                     text += "<@" + str(member.id) + ">"
                     flag = False
-                else:
-                    text += "None"
-            text += " colorId=" + str(player['colorId'])
-            text += " " + str(player['isDead'])
+            if flag:
+                text += "Not Linked"
+            # text += " colorId=" + str(player['colorId'])
+            # text += " " + str(player['isDead'])
             text += "\n"
         await self.msg.edit(content=text)
 
