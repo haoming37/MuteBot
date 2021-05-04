@@ -24,6 +24,8 @@ namespace MuteBotClient
             // リプレイ保存機能スタート
             Log.LogInfo("Start Haoming.MuteBot");
             MuteBot.GetInstance().logger = Log;
+
+            Harmony.PatchAll();
         }
     }
 

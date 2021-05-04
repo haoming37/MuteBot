@@ -21,7 +21,6 @@ namespace MuteBotClient{
         private static MuteBot _instance = new MuteBot();
         public static MuteBot GetInstance() { return _instance;}
         public string url = "http://localhost:8080/mutebot";
-        private bool isRunning = false;
         private Timer timer;
         public List<Player> players = new List<Player>();
         public Game game = new Game();
@@ -43,20 +42,39 @@ namespace MuteBotClient{
             Task t =Task.Run(() => UpdateStatus(GameStatus.Task));
             _instance.timer.Dispose();
         }
-        
-        public static async Task UpdateStatus(GameStatus status){
-            if(!_instance.isServerActive) return;
-            LogInfo("UpdateStatus");
+
+        public static async Task UpdateStatusExiled(List<Player> players){
+            LogInfo("UpdateStatusExiled");
             Game game = new Game();
-            game.gameStatus = status;
-            game.players = _instance.players;
-            string json =JsonConvert.SerializeObject(game);
+            game.gameStatus = GameStatus.Task;
+            game.players = players;
+            string json = JsonConvert.SerializeObject(game);
             using(var client = new HttpClient())
             {
                 var content = new StringContent(json, Encoding.UTF8);
                 var response = await client.PostAsync(_instance.url, content);
                 if (!response.IsSuccessStatusCode)
                 {
+                    LogInfo("Post失敗");
+                    _instance.isServerActive = false;
+                }
+            }
+            return;
+        }
+        
+        public static async Task UpdateStatus(GameStatus status){
+            LogInfo("UpdateStatus");
+            Game game = new Game();
+            game.gameStatus = status;
+            game.players = _instance.players;
+            string json = JsonConvert.SerializeObject(game);
+            using(var client = new HttpClient())
+            {
+                var content = new StringContent(json, Encoding.UTF8);
+                var response = await client.PostAsync(_instance.url, content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    LogInfo("Post失敗");
                     _instance.isServerActive = false;
                 }
             }

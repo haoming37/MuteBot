@@ -25,7 +25,7 @@ namespace MuteBotClient {
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.FixedUpdate))]
     public static class PlayerControlFixedUpdatePatch{
         public static void Prefix(PlayerControl __instance) {
-            if (AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.Started) return;
+            // if (AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.Started) return;
             // プレイヤー一覧取得
             List<Player> players = new List<Player>();
             foreach(PlayerControl player in PlayerControl.AllPlayerControls)
@@ -36,10 +36,52 @@ namespace MuteBotClient {
                 p.name = player.name;
                 players.Add(p);
             }
-            MuteBot.GetInstance().players = players;
+            if(AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Joined){
+                bool flag = false;
+                foreach(var player in players)
+                {
+                    bool isContain = false;
+                    foreach(var pplayer in MuteBot.GetInstance().players)
+                    {
+                        if(pplayer.name == player.name && pplayer.colorId == player.colorId)
+                        {
+                            isContain = true;
+                            break;
+                        }
+                    }
+                    if(!isContain)
+                    {
+                        flag = true;
+                        break;
+                    }
+                }
+                if(flag){
+                    MuteBot.GetInstance().players = players;
+                    Task t =Task.Run(() => MuteBot.UpdateStatus(GameStatus.Lobby));
+                }
+            }
         }
         public static void Postfix(PlayerControl __instance) {
             return;
+        }
+    }
+
+    [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.Exiled))]
+    public static class PlayerControlExiledPatch
+    {
+        public static void Postfix(PlayerControl __instance) {
+            string name = __instance.name;
+            List<Player> players = new List<Player>();
+            // 追放されたプレイヤーを死んだ扱いにする
+            foreach(Player player in MuteBot.GetInstance().players)
+            {
+                if(player.name == name)
+                {
+                    player.isDead = true;
+                }
+                players.Add(player);
+            }
+            Task t =Task.Run(() => MuteBot.UpdateStatusExiled(players));
         }
     }
 }

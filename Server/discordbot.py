@@ -8,6 +8,7 @@ from threading import Thread
 from singleton_decorator import singleton
 import time
 import asyncio
+import json
 
 
 class EventId(Enum):
@@ -36,10 +37,13 @@ class DiscordBot:
     client = discord.Client(intents=Intents)
     vc = None
     msg = None
+    nameConverter = {"Nearpie": "haoming"}
+    isRunning = False
 
     @client.event
     async def on_ready():
         # 起動したらターミナルにログイン通知が表示される
+        # 多重起動したのを検知するためのログ
         print('ログインしました')
 
     @client.event
@@ -77,13 +81,16 @@ class DiscordBot:
                     targetvc = v
                     break
         self.vc = targetvc
+        self.isRunning = True
 
     async def end(self, message):
-        global client
+        # ミュートを解除する
+        await self.unmute()
         # サーバー起動のメッセージを削除する
         await self.msg.delete()
         self.vc = None
         self.msg = None
+        self.isRunning = False
 
     async def unmute(self, message):
         vcs = message.guild.voice_channels
@@ -117,7 +124,6 @@ class DiscordBot:
 
     async def muteAll(self):
         print('muteAll')
-        print(vc)
         if self.vc:
             for member in self.vc.members:
                 await member.edit(mute=True)
@@ -127,61 +133,118 @@ class DiscordBot:
         pass
 
     # ゲーム開始時、ミーティング終了時に実行
-    async def startTask(self):
+    async def startTask(self, players):
+        if self.msg == None:
+            return
         print("startTasks")
-        pass
+        for player in players:
+            flag = True
+            target = None
+            if player['name'] in self.nameConverter:
+                convertedName = self.nameConverter[player['name']]
+                for member in self.vc.members:
+                    if convertedName == member.display_name or player['name']== member.display_name:
+                        target = member
+                        flag = False
+            if target:
+                if player['isDead']:
+                    await target.edit(mute=False)
+                    await target.edit(deafen=False)
+                else:
+                    await target.edit(mute=True)
+                    await target.edit(deafen=True)
+        await self.updateMessage(players)
 
     # ミーティング開始時に実行
-    async def startDiscussion(self):
+    async def startDiscussion(self, players):
+        if self.msg == None:
+            return
         print("startDiscussion")
-        pass
+        for player in players:
+            flag = True
+            target = None
+            if player['name'] in self.nameConverter:
+                convertedName = self.nameConverter[player['name']]
+                for member in self.vc.members:
+                    if convertedName == member.display_name or player['name']== member.display_name:
+                        target = member
+                        flag = False
+            if target:
+                if player['isDead']:
+                    await target.edit(mute=True)
+                    await target.edit(deafen=False)
+                else:
+                    await target.edit(mute=False)
+                    await target.edit(deafen=False)
+        await self.updateMessage(players)
 
     # ロビーにプレイヤーが参加する都度実行
-    async def startLobby(players):
+    async def startLobby(self,players):
+        if self.msg == None:
+            return
         print("startLobby")
-        undeafenAll()
-        unmuteAll()
+        await self.undeafenAll()
+        await self.unmuteAll()
         # Msg部分を作成
+        await self.updateMessage(players)
+
+
+    async def updateMessage(self, players):
+        if self.msg == None:
+            return
         text = ""
-        text += "ゲームステータス=ロビー\n"
+        text += "MuteBot動作中\n"
         for player in players:
             text += player['name'] + "="
-            for member in vc.members:
-                if player['name'] == member.display_name:
-                    text += "@" + member.display_name
-            text += " " + int(player['colorId'])
-            text += " " + int(player['isDead'])
-            text += "\n"
-        pass
 
-    def __init__(self):
-        self.client.run(TOKEN)
+            if player['name'] in self.nameConverter:
+                convertedName = self.nameConverter[player['name']]
+            else:
+                convertedName = ""
+            for member in self.vc.members:
+                if convertedName == member.display_name or player['name'] == member.display_name:
+                    text += "<@" + str(member.id) + ">"
+                    flag = False
+                else:
+                    text += "None"
+            text += " colorId=" + str(player['colorId'])
+            text += " " + str(player['isDead'])
+            text += "\n"
+        await self.msg.edit(content=text)
+
 
 # ここからFlask用定義
 app = Flask(__name__)
 app.debug = True
-@app.route('/mutebot', methods=['GET', 'POST'])
+@app.route('/mutebot', methods=['POST'])
 def receiveMsg():
-    client = DiscordBot().client
+    db = DiscordBot()
+    client = db.client
     print("mutebot")
     if request.method == 'POST':
-        data = request.json
-        if data['GameStatus'] == EventId.Discussion:
-            function = asyncio.run_coroutine_threadsafe(startDiscussion(data), client.loop)
-            function.result()
-        elif data['GameStatus'] == EventId.Lobby:
-            function = asyncio.run_coroutine_threadsafe(startLobby(data), client.loop)
-            function.result()
-        elif data['GameStatus'] == EventId.Task:
-            function = asyncio.run_coroutine_threadsafe(startTask(data), client.loop)
-            function.result()
-        elif data["GameStatus"] == EventId.Unknown:
-            pass
+        discordbot = DiscordBot()
+        print(request.data)
+        data = json.loads(request.data.decode('utf-8'))
+        print(data)
+        if discordbot.isRunning:
+            if data['gameStatus'] == EventId.Discussion.value:
+                function = asyncio.run_coroutine_threadsafe(db.startDiscussion(data['players']), client.loop)
+                function.result()
+            elif data['gameStatus'] == EventId.Lobby.value:
+                function = asyncio.run_coroutine_threadsafe(db.startLobby(data['players']), client.loop)
+                function.result()
+            elif data['gameStatus'] == EventId.Task.value:
+                function = asyncio.run_coroutine_threadsafe(db.startTask(data['players']), client.loop)
+                function.result()
+            elif data["gameStatus"] == EventId.Unknown.value:
+                pass
         return Response("{'a':'b'}", status=201, mimetype='application/json')
     if request.method == 'GET':
-        print('muteall')
-        muteall = asyncio.run_coroutine_threadsafe(muteAll(), client.loop)
-        muteall.result()
+        if discordbot.isRunning:
+            print('muteall')
+            discordbot = DiscordBot()
+            muteall = asyncio.run_coroutine_threadsafe(discordbot.muteAll(), client.loop)
+            muteall.result()
         return 'Hello, World!'
 
 # main関数
@@ -189,7 +252,7 @@ def startWebServer():
     pass
 
 def startDiscordBot():
-    DiscordBot()
+    DiscordBot().client.run(TOKEN)
 
 def main():
     thread1 = Thread(target=startDiscordBot)
