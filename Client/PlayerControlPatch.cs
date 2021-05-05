@@ -31,7 +31,18 @@ namespace MuteBotClient {
             foreach(PlayerControl player in PlayerControl.AllPlayerControls)
             {
                 Player p = new Player();
-                p.isDead = player.Data.IsDead;
+                if(MuteBot.GetInstance().exiledPlayers.Contains(player.name))
+                {
+                    p.isDead = true;
+                }
+                else if(MuteBot.GetInstance().killedPlayers.Contains(player.name))
+                {
+                    p.isDead = true;
+                }
+                else
+                {
+                    p.isDead = player.Data.IsDead;
+                }
                 p.colorId = player.Data.ColorId;
                 p.name = player.name;
                 players.Add(p);
@@ -78,10 +89,28 @@ namespace MuteBotClient {
                 if(player.name == name)
                 {
                     player.isDead = true;
+                    MuteBot.GetInstance().exiledPlayers.Add(player.name);
                 }
                 players.Add(player);
             }
             Task t =Task.Run(() => MuteBot.UpdateStatusExiled(players));
         }
+    }
+    [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
+    public static class MurderPlayerPatch
+    {
+        public static void Prefix(PlayerControl __instance, PlayerControl DGDGDKCCKHJ)
+        {
+            // 殺されたプレイヤーを死んだ扱いにする
+            foreach(Player player in MuteBot.GetInstance().players)
+            {
+                if(player.name == DGDGDKCCKHJ.name)
+                {
+                    MuteBot.GetInstance().killedPlayers.Add(player.name);
+                    player.isDead = true;
+                }
+            }
+        }
+
     }
 }

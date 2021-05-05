@@ -13,7 +13,7 @@ namespace MuteBotClient {
     public class MeetingHudClosePatch{
         public static void Postfix(){
             MuteBot.LogInfo("MeetingHudClosePatch");
-            MuteBot.UpdateStatusDelay();
+            Task.Run(() => MuteBot.UpdateStatus(GameStatus.Task));
         }
     }
 }

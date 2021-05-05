@@ -23,6 +23,8 @@ namespace MuteBotClient{
         public string url = "http://localhost:8080/mutebot";
         private Timer timer;
         public List<Player> players = new List<Player>();
+        public List<string> exiledPlayers = new List<string>();
+        public List<string> killedPlayers = new List<string>();
         public Game game = new Game();
 
         public static void LogInfo(string msg){
@@ -66,6 +68,18 @@ namespace MuteBotClient{
             LogInfo("UpdateStatus");
             Game game = new Game();
             game.gameStatus = status;
+            if(status == GameStatus.Lobby)
+            {
+               _instance.exiledPlayers = new List<string>();
+               _instance.killedPlayers = new List<string>();
+            }
+
+            foreach(Player player in _instance.players)
+            {
+                if(_instance.exiledPlayers.Contains(player.name) || _instance.killedPlayers.Contains(player.name)){
+                    player.isDead = true;
+                }
+            }
             game.players = _instance.players;
             string json = JsonConvert.SerializeObject(game);
             using(var client = new HttpClient())

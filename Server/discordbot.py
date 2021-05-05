@@ -10,6 +10,7 @@ from singleton_decorator import singleton
 import time
 import asyncio
 import json
+import shlex
 
 
 class EventId(Enum):
@@ -55,8 +56,8 @@ class DiscordBot:
     async def on_message(message):
         content = message.content
         discordbot = DiscordBot()
-        if re.match('^/msm [a-z]*$', content):
-            command = content.split(" ")[1]
+        if re.match('^/msm [a-z].*$', content):
+            command = shlex.split(content)[1]
             print(content)
             if command == "new" or command == "n":
                 await discordbot.new(message)
@@ -66,11 +67,10 @@ class DiscordBot:
                 await discordbot.unmute(message)
             elif command == "list" or command == "l":
                 await discordbot.linkList(message)
+            elif command == "link":
+                await discordbot.link(message)
             else:
                 await discordbot.help(message)
-        elif re.match('^/msm link .* .*$', content):
-            print(content)
-            await discordbot.link(message)
 
     async def new(self, message):
         # メッセージ送り主のいるボイスチャンネルを探す
@@ -129,7 +129,7 @@ class DiscordBot:
             await member.edit(deafen=False)
 
     async def link(self, message):
-        args = message.content.strip().split(" ")
+        args = shlex.split(message.content)
         self.nameConverter[args[2]] = args[3]
         text = args[2] + "(Among Us)を" + args[3] + "(Discord)にリンクしました"
         await message.channel.send(text)
@@ -138,27 +138,32 @@ class DiscordBot:
         text = "[リンクリスト]\n"
         for item in self.nameConverter:
             text = item + "(Among Us)と" + self.nameConverter[item] + "(Discord)がリンクされています\n" 
-        await message.channel.send(text)
+            await message.channel.send(text)
 
 
     async def unmuteAll(self):
         # チャンネル内の全員のマイクミュートステータスを解除する
         if self.vc:
             for member in self.vc.members:
-                await member.edit(mute=False)
+                if member.voice.mute:
+                    while member.voice.mute:
+                        await member.edit(mute=False)
 
     async def undeafenAll(self):
         # チャンネル内の全員のスピーカーミュートステータスを解除する
         if self.vc:
             for member in self.vc.members:
-                await member.edit(deafen=False)
+                if member.voice.deaf:
+                    while member.voice.deaf:
+                        await member.edit(deafen=False)
 
     async def muteAll(self):
         print('muteAll')
         if self.vc:
             for member in self.vc.members:
-                await member.edit(mute=True)
+                # await member.edit(mute=True)
                 await member.edit(deafen=True)
+        await queue.join()
 
     async def help(self, message):
         text = """
@@ -181,24 +186,55 @@ class DiscordBot:
         for player in players:
             flag = True
             target = None
-            convertedName = ""
-            if player['name'] in self.nameConverter:
-                userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
-                if userid.isdecimal:
-                    convertedName = self.msg.guild.get_member(int(userid)).display_name
+            convertedName = self._getConvertedName(player['name'])
 
             for member in self.vc.members:
                 if convertedName == member.display_name or player['name']== member.display_name:
                     target = member
                     flag = False
-            if target:
-                if player['isDead']:
-                    await target.edit(mute=False)
-                    await target.edit(deafen=False)
-                else:
-                    await target.edit(mute=True)
-                    await target.edit(deafen=True)
+            try:
+                if target:
+                    if player['isDead']:
+                        if target.voice.mute:
+                            while target.voice.mute:
+                                await target.edit(mute=False)
+                        if target.voice.deaf:
+                            while target.voice.deaf:
+                                await target.edit(deafen=False)
+                    else:
+                        if not target.voice.mute:
+                            while not target.voice.mute:
+                                await target.edit(mute=True)
+                        if not target.voice.deaf:
+                            while not target.voice.deaf:
+                                await target.edit(deafen=True)
+            except Exception as e:
+                print(e)
         await self.updateMessage(players)
+
+    def _getConvertedName(self, name):
+        convertedName = ""
+        if name in self.nameConverter:
+            convertedName = self.nameConverter[name]
+            #userid = self.nameConverter[name].replace("<@!", "").replace(">", "")
+            #botid = self.nameConverter[name].replace("<@&", "").replace(">", "")
+            #print(userid)
+            #print(botid)
+            #for member in self.msg.guild.members:
+            #    print(member.id)
+            #    print(member.name)
+            #    if member.id == userid or member.id ==botid:
+            #        convertedName = member.name
+            # try:
+            #     member = await self.msg.guild.get_member(int(userid))
+            #     if member.bot:
+            #         convertedName = member.name
+            #     else:
+            #         convetedName = member.display_name
+            #except Exception as e:
+            #    print(e)
+        return convertedName
+
 
     # ミーティング開始時に実行
     async def startDiscussion(self, players):
@@ -208,22 +244,26 @@ class DiscordBot:
         for player in players:
             flag = True
             target = None
-            convertedName = ""
-            if player['name'] in self.nameConverter:
-                userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
-                if userid.isdecimal:
-                    convertedName = self.msg.guild.get_member(int(userid)).display_name
+            convertedName = self._getConvertedName(player['name'])
             for member in self.vc.members:
                 if convertedName == member.display_name or player['name']== member.display_name:
                     target = member
                     flag = False
             if target:
                 if player['isDead']:
-                    await target.edit(mute=True)
-                    await target.edit(deafen=False)
+                    if not target.voice.mute:
+                        while not target.voice.mute:
+                            await target.edit(mute=True)
+                    if target.voice.deaf:
+                        while target.voice.deaf:
+                            await target.edit(deafen=False)
                 else:
-                    await target.edit(mute=False)
-                    await target.edit(deafen=False)
+                    if target.voice.mute:
+                        while target.voice.mute:
+                            await target.edit(mute=False)
+                    if target.voice.deaf:
+                        while target.voice.deaf:
+                            await target.edit(deafen=False)
         await self.updateMessage(players)
 
     # ロビーにプレイヤーが参加する都度実行
@@ -238,6 +278,7 @@ class DiscordBot:
 
 
     async def updateMessage(self, players):
+        print("updateMessage")
         if self.msg == None:
             return
         text = "```"
@@ -245,20 +286,19 @@ class DiscordBot:
         for player in players:
             text += player['name'] + " <=> "
 
-            if player['name'] in self.nameConverter:
-                userid = self.nameConverter[player['name']].replace("<@!", "").replace(">", "")
-                convertedName = self.msg.guild.get_member(int(userid)).display_name
-            else:
-                convertedName = ""
+            convertedName = self._getConvertedName(player['name'])
             flag = True
             for member in self.vc.members:
-                if convertedName == member.display_name or player['name'] == member.display_name:
-                    text += "<@" + str(member.id) + ">"
-                    flag = False
+                if member.bot:
+                    if convertedName == member.name or player['name'] == member.name:
+                        text += "<@" + str(member.id) + ">"
+                        flag = False
+                else:
+                    if convertedName == member.display_name or player['name'] == member.display_name:
+                        text += "<@" + str(member.id) + ">"
+                        flag = False
             if flag:
                 text += "Not Linked"
-            # text += " colorId=" + str(player['colorId'])
-            # text += " " + str(player['isDead'])
             text += "\n"
         await self.msg.edit(content=text)
 
@@ -288,10 +328,7 @@ def receiveMsg():
                 function.result()
             elif data["gameStatus"] == EventId.Unknown.value:
                 pass
-        return Response("{'a':'b'}", status=201, mimetype='application/json')
-    if request.method == 'GET':
-        # サーバーが起動していることを確認する用
-        return 'Hello, World!'
+        return Response("{}", status=201, mimetype='application/json')
 
 # main関数
 def startDiscordBot():
