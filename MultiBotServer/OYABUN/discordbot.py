@@ -199,13 +199,21 @@ class DiscordBot:
             # 割り切れなかった余りを上から一つずつ挿入
             if rem != 0:
                 counter = 0
-                for index in items[len(SLAVES)+1]:
-                    items[counter][index] = items[len(SLAVES)+1][index]
-                    counter += 1
+                print(len(items))
+                print(len(SLAVES))
+                if len(items) == len(SLAVES)+2:
+                    for index in items[len(SLAVES)+1]:
+                        items[counter][index] = items[len(SLAVES)+1][index]
+                        counter += 1
+                else:
+                    print("子分の数よりもプレイヤーが少ない場合")
 
             # SLAVEに処理を実行させる
             for i in range(0, len(SLAVES)):
                 print("子分が実行")
+                if i >= len(items):
+                    print("子分の数よりもプレイヤーが少ないためbreak")
+                    break
                 SLAVES[i].data = items[i]
                 print(items[i])
             voicestatus = items[len(SLAVES)]
