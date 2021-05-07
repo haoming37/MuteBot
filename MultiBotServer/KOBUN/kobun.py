@@ -68,9 +68,6 @@ class DiscordBot:
         if targetvc == None:
             message.channel.send("ボイスチャンネルに参加してからコマンドを実行してください")
             return
-        if os.path.isfile(baseDir + "/nameConverter.json"):
-            with open(baseDir +"/nameConverter.json", "r") as f:
-                self.nameConverter = json.load(f)
         self.msg = await message.channel.send("Misimoの子分準備完了")
         self.vc = targetvc
         self.isRunning = True

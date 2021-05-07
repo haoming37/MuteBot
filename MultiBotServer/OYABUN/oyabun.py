@@ -31,10 +31,10 @@ os.environ['WERKZEUG_RUN_MAIN'] = 'true'
 Intents = discord.Intents.default()
 Intents.members = True
 
-# if getattr(sys, 'frozen', False):
-#     baseDir = os.path.dirname(os.path.abspath(sys.executable))
-# else:
-#     baseDir = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+    baseDir = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    baseDir = os.path.dirname(os.path.abspath(__file__))
 # TOKENPATH = baseDir + "/TOKEN"
 # if os.path.isfile(TOKENPATH):
 #     with open(TOKENPATH) as f:
@@ -194,19 +194,17 @@ class DiscordBot:
             items = []
             item = {}
             counter = 0
+            # num個をそれぞれに割り当てる、rem個を最終要素に挿入
             for index in voicestatus:
                 item[index] = voicestatus[index]
                 counter += 1
-                if counter >= num:
+                if counter >= num and len(items) < (len(SLAVES) + 1) :
                     items.append(item)
                     item = {}
                     counter = 0
-
-            # BOTの人数よりも少ない場合は空のアイテムを挿入する
-            if len(SLAVES)+1 > len(items):
-                for i in range(len(SLAVES)+1 - len(items)):
-                    items = {}
-                    items.append(item)
+            if item != {}:
+                items.append(item)
+                item = {}
 
             # 割り切れなかった余りを上から一つずつ挿入
             if rem != 0:
