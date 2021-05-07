@@ -12,6 +12,7 @@ import asyncio
 import json
 import shlex
 import socket
+import argparse
 
 
 # DiscordRateLimit回避用のBOT
@@ -30,16 +31,21 @@ os.environ['WERKZEUG_RUN_MAIN'] = 'true'
 Intents = discord.Intents.default()
 Intents.members = True
 
-if getattr(sys, 'frozen', False):
-    baseDir = os.path.dirname(os.path.abspath(sys.executable))
-else:
-    baseDir = os.path.dirname(os.path.abspath(__file__))
-TOKENPATH = baseDir + "/TOKEN"
-if os.path.isfile(TOKENPATH):
-    with open(TOKENPATH) as f:
-        TOKEN = f.read()
-else:
-    TOKEN = os.getenv("DISCORD_TOKEN", default="")
+# if getattr(sys, 'frozen', False):
+#     baseDir = os.path.dirname(os.path.abspath(sys.executable))
+# else:
+#     baseDir = os.path.dirname(os.path.abspath(__file__))
+# TOKENPATH = baseDir + "/TOKEN"
+# if os.path.isfile(TOKENPATH):
+#     with open(TOKENPATH) as f:
+#         TOKEN = f.read()
+# else:
+#     TOKEN = os.getenv("DISCORD_TOKEN", default="")
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--token', default='')
+args = parser.parse_args()
+TOKEN = args.token
 
 
 @singleton
@@ -144,13 +150,13 @@ class DiscordBot:
 
     async def help(self, message):
         text = """
-```使い方```
->>>/msm new
+```使い方
+/msm new
 /msm end
 /msm unmute
 /msm link <AmongUsプレイヤー名> @<Discord表示名>
 ※リンク結果はロビーで色を変える、入り直す等をすると反映されます
-        ```
+```
         """
         await message.channel.send(text)
 
@@ -195,6 +201,12 @@ class DiscordBot:
                     items.append(item)
                     item = {}
                     counter = 0
+
+            # BOTの人数よりも少ない場合は空のアイテムを挿入する
+            if len(SLAVES)+1 > len(items):
+                for i in range(len(SLAVES)+1 - len(items)):
+                    items = {}
+                    items.append(item)
 
             # 割り切れなかった余りを上から一つずつ挿入
             if rem != 0:

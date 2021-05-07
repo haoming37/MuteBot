@@ -7,20 +7,26 @@ import asyncio
 import socket
 import time
 import re, shlex
+import argparse
 
 Intents = discord.Intents.default()
 Intents.members = True
 
-if getattr(sys, 'frozen', False):
-    baseDir = os.path.dirname(os.path.abspath(sys.executable))
-else:
-    baseDir = os.path.dirname(os.path.abspath(__file__))
-TOKENPATH = baseDir + "/KOBUN_TOKEN"
-if os.path.isfile(TOKENPATH):
-    with open(TOKENPATH) as f:
-        TOKEN = f.read()
-else:
-    TOKEN = os.getenv("DISCORD_TOKEN", default="")
+# if getattr(sys, 'frozen', False):
+#     baseDir = os.path.dirname(os.path.abspath(sys.executable))
+# else:
+#     baseDir = os.path.dirname(os.path.abspath(__file__))
+# TOKENPATH = baseDir + "/KOBUN_TOKEN"
+# if os.path.isfile(TOKENPATH):
+#     with open(TOKENPATH) as f:
+#         TOKEN = f.read()
+# else:
+#     TOKEN = os.getenv("DISCORD_TOKEN", default="")
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--token', default='')
+args = parser.parse_args()
+TOKEN = args.token
 
 @singleton
 class DiscordBot:
