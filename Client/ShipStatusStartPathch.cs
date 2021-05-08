@@ -7,6 +7,7 @@ namespace MuteBotClient {
     public static class ShipStatusStartPatch{
         public static void Prefix(){
             MuteBot.LogInfo("ShipStatusStartPatch");
+            MuteBot.GetInstance().isGameEnded = false;
             Task.Run(() => MuteBot.UpdateStatus(GameStatus.Task));
             return;
         }

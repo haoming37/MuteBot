@@ -17,6 +17,7 @@ using Newtonsoft.Json;
 namespace MuteBotClient{
     public sealed class MuteBot{
         public bool isServerActive = true;
+        public bool isGameEnded = false;
         public BepInEx.Logging.ManualLogSource logger = null;
         private static MuteBot _instance = new MuteBot();
         public static MuteBot GetInstance() { return _instance;}
@@ -47,19 +48,26 @@ namespace MuteBotClient{
 
         public static async Task UpdateStatusExiled(List<Player> players){
             LogInfo("UpdateStatusExiled");
-            Game game = new Game();
-            game.gameStatus = GameStatus.Task;
-            game.players = players;
-            string json = JsonConvert.SerializeObject(game);
-            using(var client = new HttpClient())
+            if(!_instance.isGameEnded)
             {
-                var content = new StringContent(json, Encoding.UTF8);
-                var response = await client.PostAsync(_instance.url, content);
-                if (!response.IsSuccessStatusCode)
+                Game game = new Game();
+                game.gameStatus = GameStatus.Task;
+                game.players = players;
+                string json = JsonConvert.SerializeObject(game);
+                using(var client = new HttpClient())
                 {
-                    LogInfo("Post失敗");
-                    _instance.isServerActive = false;
+                    var content = new StringContent(json, Encoding.UTF8);
+                    var response = await client.PostAsync(_instance.url, content);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        LogInfo("Post失敗");
+                        _instance.isServerActive = false;
+                    }
                 }
+            }
+            else
+            {
+                UpdateStatus(GameStatus.Lobby)
             }
             return;
         }
