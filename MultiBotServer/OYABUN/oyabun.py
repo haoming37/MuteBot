@@ -47,6 +47,63 @@ parser.add_argument('--token', default='')
 args = parser.parse_args()
 TOKEN = args.token
 
+def colorIdToName(colorId):
+    return{
+        0: "red",
+        1: "blue",
+        2: "green",
+        3: "pink",
+        4: "orange",
+        5: "yellow",
+        6: "black",
+        7: "white",
+        8: "purple",
+        9: "brown",
+        10: "cyan",
+        11: "lime",
+        12: "salmon",
+        13: "bordeaux",
+        14: "olive",
+        15: "turqoise",
+        16: "mint",
+        17: "lavender",
+        18: "nougat",
+        19: "peach",
+        20: "wasabi",
+        21: "hotpink",
+        22: "grey",
+        23: "petrol",
+    }.get(colorId)
+
+def NameToColorId(name):
+    return{
+        "red": 0,
+        "blue": 1,
+        "green": 2,
+        "pink": 3,
+        "orange": 4,
+        "yellow": 5,
+        "black": 6,
+        "white": 7,
+        "purple": 8,
+        "brown": 9,
+         "cyan": 10,
+         "lime": 11,
+         "salmon": 12,
+         "bordeaux": 13,
+         "olive": 14,
+         "turqoise": 15,
+         "mint": 16,
+         "lavender": 17,
+         "nougat": 18,
+         "peach": 19,
+         "wasabi": 20,
+         "hotpink": 21,
+         "grey": 22,
+         "petrol": 23,
+    }.get(name)
+
+
 
 @singleton
 class DiscordBot:
@@ -54,6 +111,8 @@ class DiscordBot:
     vc = None
     msg = None
     nameConverter = {}
+    colorConverter = {}
+    players = []
     isRunning = False
 
     @client.event
@@ -61,6 +120,28 @@ class DiscordBot:
         # 起動したらターミナルにログイン通知が表示される
         # 多重起動したのを検知するためのログ
         print('ログインしました')
+
+    @client.event
+    async def on_reaction_add(reaction, user):
+        # リアクションをしたのがBOTじゃない場合のみ実施
+        if reaction.message == DiscordBot().msg:
+            if reaction.message.author != user:
+                print(reaction.emoji)
+                color = NameToColorId(re.sub(r"^au", "", reaction.emoji.name))
+
+                # 他の色にリンクされている場合は外す
+                for key in DiscordBot().colorConverter:
+                    if key != color and DiscordBot().colorConverter[key] == user.display_name:
+                        DiscordBot().colorConverter[key] = ""
+                # 既にリンクされている場合はリンクを外す
+                if color in DiscordBot().colorConverter and DiscordBot().colorConverter[str(color)] == user.display_name:
+                    DiscordBot().colorConverter[str(color)] = ""
+                else:
+                    DiscordBot().colorConverter[str(color)] = user.display_name
+
+                await DiscordBot().updateMessage(DiscordBot().players)
+                await reaction.remove(user)
+            
 
     @client.event
     async def on_message(message):
@@ -75,6 +156,12 @@ class DiscordBot:
                 await discordbot.end(message)
             elif command == "unmute" or command == "u":
                 await discordbot.unmuteAll()
+            elif command == "mute" or command == "u":
+                await discordbot.muteAll()
+            elif command == "list" or command == "l":
+                await discordbot.linkList(message)
+            elif command == "link":
+                await discordbot.link(message)
             elif command == "list" or command == "l":
                 await discordbot.linkList(message)
             elif command == "link":
@@ -102,6 +189,9 @@ class DiscordBot:
         if os.path.isfile(baseDir + "/nameConverter.json"):
             with open(baseDir +"/nameConverter.json", "r") as f:
                 self.nameConverter = json.load(f)
+        if os.path.isfile(baseDir + "/colorConverter.json"):
+            with open(baseDir +"/colorConverter.json", "r") as f:
+                self.colorConverter = json.load(f)
         self.msg = await message.channel.send("MuteBot開始\nクライアント待ち")
         self.vc = targetvc
         self.isRunning = True
@@ -117,20 +207,10 @@ class DiscordBot:
             self.isRunning = False
             with open(baseDir +"/nameConverter.json", "w") as f:
                 json.dump(self.nameConverter,f)
+            with open(baseDir +"/colorConverter.json", "w") as f:
+                json.dump(self.colorConverter,f)
         else:
             message.channel.send("MuteBotが起動していません")
-
-    async def link(self, message):
-        args = shlex.split(message.content)
-        self.nameConverter[args[2]] = args[3]
-        text = args[2] + "(Among Us)を" + args[3] + "(Discord)にリンクしました"
-        await message.channel.send(text)
-    
-    async def linkList(self, message):
-        text = "[リンクリスト]\n"
-        for item in self.nameConverter:
-            text = item + "(Among Us)と" + self.nameConverter[item] + "(Discord)がリンクされています\n" 
-            await message.channel.send(text)
 
     async def unmuteAll(self):
         # チャンネル内の全員のミュートステータスを解除する
@@ -167,9 +247,9 @@ class DiscordBot:
         print("startTasks")
         voicestatus = {}
         for player in players:
-            convertedName = self._getConvertedName(player['name'])
+            convertedName = self._getConvertedName(player['name'], player['colorId'])
             for member in self.vc.members:
-                if convertedName == member.display_name or player['name']== member.display_name:
+                if convertedName == member.display_name:
                     print("Match")
                     print(convertedName)
                     if player['isDead']:
@@ -226,9 +306,14 @@ class DiscordBot:
                     break
                 SLAVES[i].data = items[i]
                 print(items[i])
-            voicestatus = items[len(SLAVES)]
-            print("親分が実行")
-            print(voicestatus)
+
+            # Masterに処理を実行させる
+            if len(items) >= len(SLAVES) + 1:
+                voicestatus = items[len(SLAVES)]
+                print("親分が実行")
+                print(voicestatus)
+
+
 
         # MASTERで処理を実行
         try:
@@ -242,12 +327,14 @@ class DiscordBot:
         except Exception as e:
             print(e)
 
-    def _getConvertedName(self, name):
+    def _getConvertedName(self, name, colorId):
         convertedName = ""
-        if name in self.nameConverter:
-            convertedName = self.nameConverter[name]
-        return convertedName
+        if str(colorId) in self.colorConverter:
+            convertedName = self.colorConverter[str(colorId)]
 
+        #elif name in self.nameConverter:
+        #    convertedName = self.nameConverter[name]
+        return convertedName
 
     # ミーティング開始時に実行
     async def startDiscussion(self, players):
@@ -257,9 +344,9 @@ class DiscordBot:
         voicestatus = {}
         for player in players:
             flag = True
-            convertedName = self._getConvertedName(player['name'])
+            convertedName = self._getConvertedName(player['name'], player['colorId'])
             for member in self.vc.members:
-                if convertedName == member.display_name or player['name']== member.display_name:
+                if convertedName == member.display_name:
                     print("Match")
                     print(convertedName)
                     if player['isDead']:
@@ -274,35 +361,46 @@ class DiscordBot:
         if self.msg == None:
             return
         print("startLobby")
+        self.players = players
         await self.unmuteAll()
         # Msg部分を作成
         await self.updateMessage(players)
 
 
     async def updateMessage(self, players):
+        print(self.colorConverter)
         print("updateMessage")
         if self.msg == None:
             return
-        text = "```"
-        text += "MuteBot動作中```"
+        text = ""
+        emojis = []
         for player in players:
+            emojiName  = "au" + colorIdToName(player['colorId'])
+            emoji = discord.utils.get(self.msg.guild.emojis, name=emojiName)
+            emojis.append(emoji)
+            emojiText = "<:" + emoji.name + ":" + str(emoji.id) + ">"
+
+            text += emojiText
             text += player['name'] + " <=> "
 
-            convertedName = self._getConvertedName(player['name'])
+            convertedName = self._getConvertedName(player['name'], player['colorId'])
             flag = True
             for member in self.vc.members:
                 if member.bot:
-                    if convertedName == member.name or player['name'] == member.name:
+                    if convertedName == member.name:
                         text += "<@" + str(member.id) + ">"
                         flag = False
                 else:
-                    if convertedName == member.display_name or player['name'] == member.display_name:
+                    if convertedName == member.display_name:
                         text += "<@" + str(member.id) + ">"
                         flag = False
             if flag:
-                text += "Not Linked"
+                text += "未接続です " + emojiText + "をクリック"
             text += "\n"
         await self.msg.edit(content=text)
+
+        for emoji in emojis:
+            await self.msg.add_reaction(emoji)
 
 class slave():
     thread = None
