@@ -13,9 +13,9 @@ def launch_kobun(token):
 
 def launch_oyabun(token):
     if getattr(sys, 'frozen', False):
-        cmd = "python OYABUN/oyabun.exe --token=" + token
+        cmd = "OYABUN/oyabun.exe --token=" + token
     else:
-        cmd = "python OYABUN/oyabun.py --token=" + token
+        cmd = "OYABUN/oyabun.py --token=" + token
     subprocess.run(cmd.strip().split(" "))
 
 def main():
