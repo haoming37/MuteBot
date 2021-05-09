@@ -132,7 +132,7 @@ class DiscordBot:
 
                 # 他の色にリンクされている場合は外す
                 for key in DiscordBot().colorConverter:
-                    if key != color and DiscordBot().colorConverter[key] == user.display_name:
+                    if key != str(color) and DiscordBot().colorConverter[key] == user.display_name:
                         DiscordBot().colorConverter[key] = ""
                 # 既にリンクされている場合はリンクを外す
                 if str(color) in DiscordBot().colorConverter and DiscordBot().colorConverter[str(color)] == user.display_name:
