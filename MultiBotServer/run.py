@@ -6,7 +6,7 @@ from threading import Thread
 def launch_kobun(token):
 
     if getattr(sys, 'frozen', False):
-        cmd = "python KOBUN/kobun.exe --token=" + token
+        cmd = "KOBUN/kobun.exe --token=" + token
     else:
         cmd = "python KOBUN/kobun.py --token=" + token
     subprocess.run(cmd.strip().split(" "))
@@ -15,7 +15,7 @@ def launch_oyabun(token):
     if getattr(sys, 'frozen', False):
         cmd = "OYABUN/oyabun.exe --token=" + token
     else:
-        cmd = "OYABUN/oyabun.py --token=" + token
+        cmd = "python OYABUN/oyabun.py --token=" + token
     subprocess.run(cmd.strip().split(" "))
 
 def main():
