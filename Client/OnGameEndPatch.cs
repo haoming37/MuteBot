@@ -14,6 +14,7 @@ namespace MuteBotClient{
         }
         public static void Postfix(AmongUsClient __instance, ref GameOverReason NEPMFBMGGLF, bool FBEKDLNKNLL) {
             MuteBot.LogInfo("OnGameEndPatch");
+            MuteBot.GetInstance().isGameEnded = true;
             Task.Run(() => MuteBot.UpdateStatus(GameStatus.Lobby));
             return;
         }

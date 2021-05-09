@@ -1,3 +1,4 @@
+# coding: utf-8
 import discord
 import json
 import os, sys
@@ -50,6 +51,8 @@ class DiscordBot:
             print(content)
             if command == "new" or command == "n":
                 await discordbot.new(message)
+            if command == "end" or command == "e":
+                await discordbot.end(message)
 
     async def new(self, message):
         # メッセージ送り主のいるボイスチャンネルを探す
@@ -71,6 +74,10 @@ class DiscordBot:
         self.msg = await message.channel.send("Misimoの子分準備完了")
         self.vc = targetvc
         self.isRunning = True
+
+    async def end(self, message):
+        if self.msg:
+            await self.msg.delete()
 
     async def setVoiceStatus(self,voicestatus):
         if self.isRunning and self.vc:

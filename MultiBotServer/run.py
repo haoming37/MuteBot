@@ -4,15 +4,25 @@ from threading import Thread
 
 
 def launch_kobun(token):
-    cmd = "python KOBUN/kobun.py --token=" + token
+
+    if getattr(sys, 'frozen', False):
+        cmd = "KOBUN/kobun.exe --token=" + token
+    else:
+        cmd = "python KOBUN/kobun.py --token=" + token
     subprocess.run(cmd.strip().split(" "))
 
 def launch_oyabun(token):
-    cmd = "python OYABUN/oyabun.py --token=" + token
+    if getattr(sys, 'frozen', False):
+        cmd = "OYABUN/oyabun.exe --token=" + token
+    else:
+        cmd = "python OYABUN/oyabun.py --token=" + token
     subprocess.run(cmd.strip().split(" "))
 
 def main():
-    baseDir = os.path.dirname(os.path.abspath(__file__))
+    if getattr(sys, 'frozen', False):
+        baseDir = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        baseDir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(baseDir)
 
     oyabunToken = ""
