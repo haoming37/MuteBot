@@ -22,6 +22,7 @@ namespace MuteBotClient{
         private static MuteBot _instance = new MuteBot();
         public static MuteBot GetInstance() { return _instance;}
         public string url = "http://localhost:8080/mutebot";
+        public string code = "";
         private Timer timer;
         public List<Player> players = new List<Player>();
         public List<string> exiledPlayers = new List<string>();
@@ -51,6 +52,7 @@ namespace MuteBotClient{
             if(!_instance.isGameEnded)
             {
                 Game game = new Game();
+                game.code = _instance.code;
                 game.gameStatus = GameStatus.Task;
                 game.players = players;
                 string json = JsonConvert.SerializeObject(game);
@@ -67,7 +69,7 @@ namespace MuteBotClient{
             }
             else
             {
-                UpdateStatus(GameStatus.Lobby)
+                await UpdateStatus(GameStatus.Lobby);
             }
             return;
         }
@@ -76,6 +78,7 @@ namespace MuteBotClient{
             LogInfo("UpdateStatus");
             Game game = new Game();
             game.gameStatus = status;
+            game.code = _instance.code;
             if(status == GameStatus.Lobby)
             {
                _instance.exiledPlayers = new List<string>();

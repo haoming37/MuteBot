@@ -114,6 +114,7 @@ class DiscordBot:
     nameConverter = {}
     colorConverter = {}
     players = []
+    code = ""
     isRunning = False
 
     @client.event
@@ -399,7 +400,7 @@ class DiscordBot:
             if flag:
                 text += "未接続です " + emojiText + "をクリック"
             text += "\n"
-        embed = discord.Embed(title="MuteBot接続中", description=text, color=0xff0000)
+        embed = discord.Embed(title="MuteBot接続中 ルームコード: " + self.code, description=text, color=0xff0000)
         await self.msg.edit(embed=embed)
 
         for emoji in emojis:
@@ -466,6 +467,7 @@ def receiveMsg():
         print(request.data)
         data = json.loads(request.data.decode('utf-8'))
         print(data)
+        discordbot.code = data['code']
         if discordbot.isRunning:
             if data['gameStatus'] == EventId.Discussion.value:
                 function = asyncio.run_coroutine_threadsafe(db.startDiscussion(data['players']), client.loop)
