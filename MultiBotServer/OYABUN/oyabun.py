@@ -193,7 +193,8 @@ class DiscordBot:
         if os.path.isfile(baseDir + "/colorConverter.json"):
             with open(baseDir +"/colorConverter.json", "r") as f:
                 self.colorConverter = json.load(f)
-        self.msg = await message.channel.send("MuteBot開始\nクライアント待ち")
+        embed = discord.Embed(title="MuteBot接続待ち", description="クライアント接続待ち", color=0xff0000)
+        self.msg = await message.channel.send(embed=embed)
         self.vc = targetvc
         self.isRunning = True
 
@@ -398,7 +399,8 @@ class DiscordBot:
             if flag:
                 text += "未接続です " + emojiText + "をクリック"
             text += "\n"
-        await self.msg.edit(content=text)
+        embed = discord.Embed(title="MuteBot接続中", description=text, color=0xff0000)
+        await self.msg.edit(embed=embed)
 
         for emoji in emojis:
             await self.msg.add_reaction(emoji)
