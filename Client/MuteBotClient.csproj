@@ -4,18 +4,26 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <Version>0.1.1</Version>
     <Authors>Haoming</Authors>
-    <Mappings>EoF-1141/Mappings:0.4.1</Mappings>
-    <GameVersion>2021.4.14s</GameVersion>
-    <DefineConstants>$(DefineConstants);STEAM</DefineConstants>
     <RootNamespace>MuteBotClient</RootNamespace>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Reactor.OxygenFilter.MSBuild" Version="0.3.0" />
   </ItemGroup>
 
-  <Target Name="CopyCustomContent" AfterTargets="Reobfuscate">
-      <Message Text="Second occurrence" />
-      <Copy SourceFiles="$(OutputPath)reobfuscated/$(AssemblyName)-$(GameVersion).dll" DestinationFolder="$(AmongUs)/BepInEx/plugins/" />
+  <PropertyGroup>
+    <GameVersion>2021.5.10s</GameVersion>
+    <DefineConstants>$(DefineConstants);STEAM</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="$(AmongUs)/BepInEx/core/*.dll"/>
+    <Reference Include="$(AmongUs)/BepInEx/unhollowed/*.dll"/>
+  </ItemGroup>
+
+  <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
+    <Message Text="Second occurrence" />
+    <Copy SourceFiles="$(ProjectDir)\bin\$(Configuration)\netstandard2.1\MuteBotClient.dll" DestinationFolder="$(AmongUs)/BepInEx/plugins/" />
   </Target>
 </Project>

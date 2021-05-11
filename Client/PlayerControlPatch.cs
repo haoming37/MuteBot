@@ -100,12 +100,12 @@ namespace MuteBotClient {
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
     public static class MurderPlayerPatch
     {
-        public static void Prefix(PlayerControl __instance, PlayerControl DGDGDKCCKHJ)
+        public static void Prefix(PlayerControl __instance, PlayerControl target)
         {
             // 殺されたプレイヤーを死んだ扱いにする
             foreach(Player player in MuteBot.GetInstance().players)
             {
-                if(player.name == DGDGDKCCKHJ.name)
+                if(player.name == target.name)
                 {
                     MuteBot.GetInstance().killedPlayers.Add(player.name);
                     player.isDead = true;

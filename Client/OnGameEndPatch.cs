@@ -9,10 +9,10 @@ using UnityEngine;
 namespace MuteBotClient{
     [HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.OnGameEnd))]
     public class OnGameEndPatch {
-        public static void Prefix(AmongUsClient __instance, ref GameOverReason NEPMFBMGGLF, bool FBEKDLNKNLL) {
+        public static void Prefix(AmongUsClient __instance, ref GameOverReason gameOverReason, bool showAd) {
             return;
         }
-        public static void Postfix(AmongUsClient __instance, ref GameOverReason NEPMFBMGGLF, bool FBEKDLNKNLL) {
+        public static void Postfix(AmongUsClient __instance, ref GameOverReason gameOverReason, bool showAd) {
             MuteBot.LogInfo("OnGameEndPatch");
             MuteBot.GetInstance().isGameEnded = true;
             Task.Run(() => MuteBot.UpdateStatus(GameStatus.Lobby));
