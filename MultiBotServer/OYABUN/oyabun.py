@@ -116,6 +116,8 @@ class DiscordBot:
     players = []
     code = ""
     isRunning = False
+    thumbnail = 'https://raw.githubusercontent.com/haoming37/MuteBot/master/SHHHHHHH.jpg'
+
 
     @client.event
     async def on_ready():
@@ -195,6 +197,7 @@ class DiscordBot:
             with open(baseDir +"/colorConverter.json", "r") as f:
                 self.colorConverter = json.load(f)
         embed = discord.Embed(title="MuteBot接続待ち", description="クライアント接続待ち", color=0xff0000)
+        embed.set_thumbnail(url=self.thumbnail)
         self.msg = await message.channel.send(embed=embed)
         self.vc = targetvc
         self.isRunning = True
@@ -401,6 +404,7 @@ class DiscordBot:
                 text += "未接続です " + emojiText + "をクリック"
             text += "\n"
         embed = discord.Embed(title="MuteBot接続中 ルームコード: " + self.code, description=text, color=0xff0000)
+        embed.set_thumbnail(url=self.thumbnail)
         await self.msg.edit(embed=embed)
 
         for emoji in emojis:

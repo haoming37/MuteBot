@@ -49,6 +49,7 @@ namespace MuteBotClient {
             }
             if(AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Joined){
                 bool flag = false;
+                MuteBot.GetInstance().code = InnerNet.GameCode.IntToGameName(AmongUsClient.Instance.GameId);
                 foreach(var player in players)
                 {
                     bool isContain = false;
