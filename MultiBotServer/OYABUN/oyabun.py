@@ -403,7 +403,7 @@ class DiscordBot:
             if flag:
                 text += "未接続です " + emojiText + "をクリック"
             text += "\n"
-        embed = discord.Embed(title="MuteBot接続中 ルームコード: " + self.code, description=text, color=0xff0000)
+        embed = discord.Embed(title="ルームコード: " + self.code, description=text, color=0xff0000)
         embed.set_thumbnail(url=self.thumbnail)
         await self.msg.edit(embed=embed)
 
