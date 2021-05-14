@@ -323,6 +323,7 @@ class DiscordBot:
 
         # MASTERで処理を実行
         try:
+            cors = []
             for member in self.vc.members:
                 name = member.display_name
                 if name in voicestatus:
@@ -407,8 +408,35 @@ class DiscordBot:
         embed.set_thumbnail(url=self.thumbnail)
         await self.msg.edit(embed=embed)
 
+
+        reactions = discord.utils.get(self.client.cached_messages, id=self.msg.id).reactions
+        reactions = reactions.copy()
+        cors = []
+        # Msgに不要なリアクションを削除する
+        for reaction in reactions:
+            flag = False
+            for emoji in emojis:
+                if reaction.emoji.id == emoji.id:
+                    flag = True
+                    break
+            if not flag:
+                print("remove", end='')
+                print(reaction.emoji)
+                cors.append(self.msg.remove_reaction(reaction.emoji,self.msg.author))
+
+        # Msgに足りないリアクションを追加する
+        print(emoji)
         for emoji in emojis:
-            await self.msg.add_reaction(emoji)
+            flag = False
+            for reaction in reactions:
+                if emoji.id == reaction.emoji.id:
+                    flag = True
+                    break
+            if not flag:
+                print("add", end='')
+                print(emoji)
+                cors.append(self.msg.add_reaction(emoji))
+        await asyncio.gather(*cors)
 
 class slave():
     thread = None
