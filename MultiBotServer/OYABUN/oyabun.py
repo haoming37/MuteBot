@@ -327,12 +327,19 @@ class DiscordBot:
             for member in self.vc.members:
                 name = member.display_name
                 if name in voicestatus:
-                    while voicestatus[name]['mute'] != member.voice.mute:
-                        await member.edit(mute=voicestatus[name]['mute'])
-                    while voicestatus[name]['deafen'] != member.voice.deaf:
-                        await member.edit(deafen=voicestatus[name]['deafen'])
+                    cors.append(self._setVoiceStatus(voicestatus, member, name, 'mute'))
+                    cors.append(self._setVoiceStatus(voicestatus, member, name, 'deafen'))
+            await asyncio.gather(*cors)
         except Exception as e:
             print(e)
+    
+    async def _setVoiceStatus(self, voicestatus, member, name, status):
+        if status == 'mute':
+            while voicestatus[name][status] != member.voice.mute:
+                await member.edit(mute=voicestatus[name][status])
+        elif status == 'deafen':
+            while voicestatus[name][status] != member.voice.deaf:
+                await member.edit(deafen=voicestatus[name][status])
 
     def _getConvertedName(self, name, colorId):
         convertedName = ""
@@ -425,7 +432,6 @@ class DiscordBot:
                 cors.append(self.msg.remove_reaction(reaction.emoji,self.msg.author))
 
         # Msgに足りないリアクションを追加する
-        print(emoji)
         for emoji in emojis:
             flag = False
             for reaction in reactions:
