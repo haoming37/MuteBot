@@ -505,20 +505,23 @@ def receiveMsg():
         print(request.data)
         data = json.loads(request.data.decode('utf-8'))
         print(data)
-        discordbot.code = data['code']
-        if discordbot.isRunning:
-            if data['gameStatus'] == EventId.Discussion.value:
-                function = asyncio.run_coroutine_threadsafe(db.startDiscussion(data['players']), client.loop)
-                function.result()
-            elif data['gameStatus'] == EventId.Lobby.value:
-                function = asyncio.run_coroutine_threadsafe(db.startLobby(data['players']), client.loop)
-                function.result()
-            elif data['gameStatus'] == EventId.Task.value:
-                function = asyncio.run_coroutine_threadsafe(db.startTask(data['players']), client.loop)
-                function.result()
-            elif data["gameStatus"] == EventId.Unknown.value:
-                pass
-        return Response("{}", status=201, mimetype='application/json')
+        if 'code' in data and 'gameStatus' in data and 'players' in data:
+            discordbot.code = data['code']
+            if discordbot.isRunning:
+                if data['gameStatus'] == EventId.Discussion.value:
+                    function = asyncio.run_coroutine_threadsafe(db.startDiscussion(data['players']), client.loop)
+                    function.result()
+                elif data['gameStatus'] == EventId.Lobby.value:
+                    function = asyncio.run_coroutine_threadsafe(db.startLobby(data['players']), client.loop)
+                    function.result()
+                elif data['gameStatus'] == EventId.Task.value:
+                    function = asyncio.run_coroutine_threadsafe(db.startTask(data['players']), client.loop)
+                    function.result()
+                elif data["gameStatus"] == EventId.Unknown.value:
+                    pass
+            return Response("{}", status=200, mimetype='application/json')
+        else:
+            return Response("{}", status=400, mimetype='application/json')
 
 
 # main関数

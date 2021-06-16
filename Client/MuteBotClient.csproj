@@ -16,6 +16,9 @@
     <DefineConstants>$(DefineConstants);STEAM</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TheOtherRoles\Source Code\TheOtherRoles.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="$(AmongUs)/BepInEx/core/*.dll"/>

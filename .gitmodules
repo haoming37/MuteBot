@@ -1,0 +1,3 @@
+[submodule "TheOtherRoles"]
+	path = TheOtherRoles
+	url = https://github.com/haoming37/TheOtherRoles.git

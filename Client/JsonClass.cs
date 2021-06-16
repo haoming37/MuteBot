@@ -40,4 +40,10 @@ namespace MuteBotClient{
             code = "";
         }
     }
+    public class CustomOptions{
+        public string optionsString{get; set;}
+        public CustomOptions(){
+            optionsString = "";
+        }
+    }
 }

@@ -114,4 +114,12 @@ namespace MuteBotClient {
         }
 
     }
+
+    [HarmonyPatch(typeof(GameOptionsMenu), nameof(GameOptionsMenu.Update))]
+    public class GameOptionsMenuUpdatePatch{
+        public static void Postfix(GameOptionsMenu __instance){
+            Task.Run(() =>MuteBot.UpdateOptionsString());
+        }
+    }
+
 }
