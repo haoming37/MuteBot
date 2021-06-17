@@ -13,6 +13,7 @@ namespace MuteBotClient
 {
     [BepInPlugin(Id, "MuteBot", "1.0.1")]
     [BepInProcess("Among Us.exe")]
+    [BepInDependency("me.eisbison.theotherroles")]
     public class ReplayPlugin : BasePlugin
     {
         public const string Id = "jp.haoming.mutebot";
