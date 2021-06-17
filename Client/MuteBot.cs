@@ -158,7 +158,24 @@ namespace MuteBotClient{
                         string percent = option.selections[option.selection].ToString();
                         if(percent != "0%"){
                             string name = Regex.Replace(option.name, " ", "");
-                            sb.AppendLine($"{name}: {percent}");
+                            name = Regex.Replace(name, "<[^>]*>", "");
+                            percent = Regex.Replace(percent, "%", "");
+                            string text = "";
+                            if(name.Length < 15){
+                                int diff = 15 - name.Length;
+                                if(percent == "100"){
+                                    diff -= 1;
+                                }
+                                text = $"{name}: ";
+                                for(int i=0; i<diff; i++){
+                                    text += " ";
+                                }
+                                text += percent;
+                            }
+                            else{
+                                text = $"{name}: {percent}";
+                            }
+                            sb.AppendLine(text);
                         }
 
                         // 役職追加をしたら修正必要
