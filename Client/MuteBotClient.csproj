@@ -17,7 +17,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TheOtherRoles\Source Code\TheOtherRoles.csproj" />
+    <ProjectReference Include="..\TheOtherRoles\TheOtherRoles\TheOtherRoles.csproj" />
   </ItemGroup>
 
   <ItemGroup>

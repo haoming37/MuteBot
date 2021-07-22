@@ -179,14 +179,14 @@ namespace MuteBotClient{
                         }
 
                         // 役職追加をしたら修正必要
-                        if(option.name.Contains("Mifune") || option.name.Contains("Jackal") || option.name.Contains("Security Guard")){
+                        if(option.name.Contains("漢") || option.name.Contains("Jackal") || option.name.Contains("無能")){
                             sb.AppendLine("```");
                             // sb.AppendLine("");
-                            if(option.name.Contains("Mifune")){
+                            if(option.name.Contains("漢")){
                                 sb.AppendLine(neutral);
                                 sb.AppendLine("```yaml");
                             }
-                            if(option.name.Contains("Jackal")){
+                            if(option.name.Contains("無能")){
                                 sb.AppendLine(crew);
                                 sb.AppendLine("```CSS");
                             }
