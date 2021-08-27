@@ -168,7 +168,7 @@ namespace MuteBotClient{
                                 }
                                 text = $"{name}: ";
                                 for(int i=0; i<diff; i++){
-                                    text += " ";
+                                    text += "  ";
                                 }
                                 text += percent;
                             }
@@ -179,14 +179,14 @@ namespace MuteBotClient{
                         }
 
                         // 役職追加をしたら修正必要
-                        if(option.name.Contains("漢") || option.name.Contains("Jackal") || option.name.Contains("無能")){
+                        if(option.name.Contains("漢") || option.name.Contains("ジャッカル") || option.name.Contains("無能")){
                             sb.AppendLine("```");
                             // sb.AppendLine("");
                             if(option.name.Contains("漢")){
                                 sb.AppendLine(neutral);
                                 sb.AppendLine("```yaml");
                             }
-                            if(option.name.Contains("無能")){
+                            if(option.name.Contains("ジャッカル")){
                                 sb.AppendLine(crew);
                                 sb.AppendLine("```CSS");
                             }
